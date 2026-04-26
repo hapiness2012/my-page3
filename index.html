@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸福指数计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        neutral: '#6B7280',
+                        light: '#F3F4F6',
+                        dark: '#1F2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .card-shadow { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+            .input-focus { @apply focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none; }
+            .btn-hover { @apply hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fa fa-smile-o text-primary text-2xl"></i>
+            <h1 class="text-xl font-bold text-dark">幸福指数计算器</h1>
+        </div>
+        <button onclick="document.getElementById('excelImport').classList.toggle('hidden')" 
+                class="bg-green-600 text-white px-3 py-1.5 rounded btn-hover">
+            <i class="fa fa-table mr-1"></i>Excel 导入
+        </button>
+    </div>
+</header>
+
+<div id="excelImport" class="hidden container mx-auto px-4 py-3">
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h3 class="font-medium mb-2">从 Excel 粘贴数据（自动计算）</h3>
+        <textarea id="excelText" rows="3" class="w-full border rounded p-2 mb-2"
+placeholder="粘贴顺序：AQI DBI22 自由时间 通勤分钟 公共空间 生活圈 社区活跃 治安 娱乐"></textarea>
+        <button onclick="importExcel()" class="bg-green-600 text-white px-4 py-2 rounded btn-hover">
+            一键导入并计算
+        </button>
+    </div>
+</div>
+
+<main class="container mx-auto px-4 py-8">
+<section id="calculator" class="bg-white rounded-xl p-6 mb-8 card-shadow">
+    <h2 class="text-xl font-bold mb-6 flex items-center">
+        <i class="fa fa-calculator text-primary mr-3"></i>指标数据输入
+    </h2>
+    <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-light rounded-lg p-5">
+            <h3 class="font-semibold mb-3 flex items-center">
+                <i class="fa fa-leaf text-primary mr-2"></i>空气质量 AQI
+            </h3>
+            <input type="number" id="aqi" min="0" max="500" class="w-full px-4 py-2 border rounded input-focus">
+            <div class="text-xs text-gray-500 mt-1">0-50 优，51-100 良，101-150 轻度污染，151+ 较差</div>
+        </div>
+
+        <div class="bg-light rounded-lg p-5">
+            <h3 class="font-semibold mb-3 flex items-center">
+                <i class="fa fa-cutlery text-secondary mr-2"></i>饮食健康 DBI-22（0-96分）
+            </h3>
+            <input type="number" id="dbi22" min="0" max="96" step="0.1" class="w-full px-4 py-2 border rounded input-focus">
+            <div class="text-xs text-gray-500 mt-1 space-y-1">
+                <div>✅ 0-20分：营养均衡、三餐规律、干净卫生、少油少糖</div>
+                <div>✅ 21-40分：饮食较健康，偶尔外卖，基本卫生</div>
+                <div>⚠️ 41-60分：常吃外卖，油腻重口，蔬菜少，不够规律</div>
+                <div>❌ 61-96分：饮食混乱，暴饮暴食，高油高糖，不卫生</div>
+            </div>
+        </div>
+
+        <div class="bg-light rounded-lg p-5">
+            <h3 class="font-semibold mb-3 flex items-center">
+                <i class="fa fa-book text-accent mr-2"></i>自由时间（小时）
+            </h3>
+            <input type="number" id="freeTime" min="0" max="24" step="0.1" class="w-full px-4 py-2 border rounded input-focus">
+        </div>
+
+        <div class="bg-light rounded-lg p-5">
+            <h3 class="font-semibold mb-3 flex items-center">
+                <i class="fa fa-bus text-blue-500 mr-2"></i>通勤时间（分钟）
+            </h3>
+            <input type="number" id="commuteTime" min="0" max="300" class="w-full px-4 py-2 border rounded input-focus">
+        </div>
+
+        <div class="bg-light rounded-lg p-5 md:col-span-2">
+            <h3 class="font-semibold mb-3 flex items-center">
+                <i class="fa fa-users text-purple-500 mr-2"></i>社交便利度（5项总分）
+            </h3>
+            <div class="grid grid-cols-5 gap-2 mb-2">
+                <input type="number" id="social1" min="0" max="30" placeholder="公共空间" class="border rounded p-2 text-sm">
+                <input type="number" id="social2" min="0" max="25" placeholder="生活圈" class="border rounded p-2 text-sm">
+                <input type="number" id="social3" min="0" max="20" placeholder="社区活跃" class="border rounded p-2 text-sm">
+                <input type="number" id="social4" min="0" max="15" placeholder="治安" class="border rounded p-2 text-sm">
+                <input type="number" id="social5" min="0" max="10" placeholder="文化娱乐" class="border rounded p-2 text-sm">
+            </div>
+            <div class="text-xs text-gray-500 space-y-2 mt-2">
+                <div><span class="font-bold">【公共空间 0~30分】</span></div>
+                <div>0-9分：几乎没有公园/广场/运动场地 → 低分</div>
+                <div>10-19分：有少量场地，距离较远 → 中等</div>
+                <div>20-30分：步行可达，设施丰富 → 高分</div>
+
+                <div><span class="font-bold">【生活圈 0~25分】</span></div>
+                <div>0-7分：买菜/购物/餐饮都不方便 → 低分</div>
+                <div>8-17分：基本满足，需要骑车/坐车 → 中等</div>
+                <div>18-25分：步行5分钟内全覆盖 → 高分</div>
+
+                <div><span class="font-bold">【社区活跃 0~20分】</span></div>
+                <div>0-6分：邻里陌生，几乎无活动 → 低分</div>
+                <div>7-13分：偶尔活动，认识部分邻居 → 中等</div>
+                <div>14-20分：邻里融洽，活动丰富 → 高分</div>
+
+                <div><span class="font-bold">【治安 0~15分】</span></div>
+                <div>0-4分：嘈杂混乱，安全感低 → 低分</div>
+                <div>5-9分：基本安全，偶尔担心 → 中等</div>
+                <div>10-15分：非常安全，完全放心 → 高分</div>
+
+                <div><span class="font-bold">【文化娱乐 0~10分】</span></div>
+                <div>0-3分：无图书馆/影院/健身场所 → 低分</div>
+                <div>4-6分：有少量场所，距离较远 → 中等</div>
+                <div>7-10分：场所丰富，方便到达 → 高分</div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-6 text-center">
+        <button onclick="calculateIndicators()" class="bg-primary text-white px-6 py-3 rounded btn-hover">
+            计算各指标得分
+        </button>
+    </div>
+</section>
+
+<section id="weight" class="bg-white rounded-xl p-6 mb-8 card-shadow">
+    <h2 class="text-xl font-bold mb-6 flex items-center">
+        <i class="fa fa-sliders text-primary mr-3"></i>权重配置
+    </h2>
+    <div id="weight-total" class="mb-3 font-medium">总权重：100%</div>
+    <div class="space-y-3">
+        <div class="flex items-center">
+            <label class="w-32">空气质量</label>
+            <input type="number" id="weight1" value="20" oninput="updateWeightTotal()" class="w-20 border rounded p-1 text-center">%
+        </div>
+        <div class="flex items-center">
+            <label class="w-32">饮食健康</label>
+            <input type="number" id="weight2" value="20" oninput="updateWeightTotal()" class="w-20 border rounded p-1 text-center">%
+        </div>
+        <div class="flex items-center">
+            <label class="w-32">自由时间</label>
+            <input type="number" id="weight3" value="20" oninput="updateWeightTotal()" class="w-20 border rounded p-1 text-center">%
+        </div>
+        <div class="flex items-center">
+            <label class="w-32">通勤时间</label>
+            <input type="number" id="weight4" value="20" oninput="updateWeightTotal()" class="w-20 border rounded p-1 text-center">%
+        </div>
+        <div class="flex items-center">
+            <label class="w-32">社交便利度</label>
+            <input type="number" id="weight5" value="20" oninput="updateWeightTotal()" class="w-20 border rounded p-1 text-center">%
+        </div>
+    </div>
+</section>
+
+<section id="result" class="bg-white rounded-xl p-6 card-shadow">
+    <h2 class="text-xl font-bold mb-6 flex items-center">
+        <i class="fa fa-bar-chart text-primary mr-3"></i>幸福指数结果
+    </h2>
+    <div class="text-center mb-6">
+        <div class="text-4xl font-bold text-primary" id="total-score">0.00</div>
+        <div class="text-neutral mt-1">综合幸福指数</div>
+        <div id="happiness-level" class="mt-3 text-lg font-semibold text-green-600">请先计算得分</div>
+    </div>
+    <button onclick="calculateTotalScore()" class="bg-secondary text-white px-6 py-3 rounded btn-hover">
+        计算综合得分
+    </button>
+</section>
+</main>
+
+<script>
+let scores = {score1:0, score2:0, score3:0, score4:0, score5:0};
+
+function importExcel() {
+    const txt = document.getElementById('excelText').value.trim();
+    const arr = txt.split(/\s+/).map(Number).filter(n => !isNaN(n));
+    if (arr.length < 9) return alert('请按顺序输入9个数字');
+    document.getElementById('aqi').value = arr[0];
+    document.getElementById('dbi22').value = arr[1];
+    document.getElementById('freeTime').value = arr[2];
+    document.getElementById('commuteTime').value = arr[3];
+    document.getElementById('social1').value = arr[4];
+    document.getElementById('social2').value = arr[5];
+    document.getElementById('social3').value = arr[6];
+    document.getElementById('social4').value = arr[7];
+    document.getElementById('social5').value = arr[8];
+    calculateIndicators();
+    calculateTotalScore();
+    alert('导入并计算完成！');
+}
+
+function calculateIndicators() {
+    const aqi = +document.getElementById('aqi').value || 0;
+    scores.score1 = Math.max(0, 100 - (aqi / 500) * 100);
+
+    const dbi = +document.getElementById('dbi22').value || 0;
+    scores.score2 = Math.max(0, 100 - (dbi / 96) * 100);
+
+    const t = +document.getElementById('freeTime').value || 0;
+    if (t >= 8) scores.score3 = 100;
+    else if (t >= 6) scores.score3 = 90;
+    else if (t >= 4) scores.score3 = 80;
+    else if (t >= 2) scores.score3 = 65;
+    else scores.score3 = 50;
+
+    const c = +document.getElementById('commuteTime').value || 0;
+    if (c <= 10) scores.score4 = 97.5;
+    else if (c <= 20) scores.score4 = 89.5;
+    else if (c <= 30) scores.score4 = 77;
+    else if (c <= 45) scores.score4 = 59.5;
+    else if (c <= 60) scores.score4 = 39.5;
+    else scores.score4 = 14.5;
+
+    const s1 = +document.getElementById('social1').value || 0;
+    const s2 = +document.getElementById('social2').value || 0;
+    const s3 = +document.getElementById('social3').value || 0;
+    const s4 = +document.getElementById('social4').value || 0;
+    const s5 = +document.getElementById('social5').value || 0;
+    scores.score5 = Math.min(100, s1*0.3 + s2*0.25 + s3*0.2 + s4*0.15 + s5*0.1);
+}
+
+function calculateTotalScore() {
+    calculateIndicators();
+    const w1 = +document.getElementById('weight1').value || 0;
+    const w2 = +document.getElementById('weight2').value || 0;
+    const w3 = +document.getElementById('weight3').value || 0;
+    const w4 = +document.getElementById('weight4').value || 0;
+    const w5 = +document.getElementById('weight5').value || 0;
+    const total = Math.max(0, (scores.score1*w1 + scores.score2*w2 + scores.score3*w3 + scores.score4*w4 + scores.score5*w5) / 100);
+    document.getElementById('total-score').innerText = total.toFixed(2);
+    showHappinessLevel(total);
+}
+
+function showHappinessLevel(score) {
+    const levelEl = document.getElementById('happiness-level');
+    let text, color;
+    if (score >= 90) { text = "🌟 非常幸福"; color = "text-green-600"; }
+    else if (score >= 75) { text = "😊 比较幸福"; color = "text-blue-600"; }
+    else if (score >= 60) { text = "😐 一般幸福"; color = "text-orange-500"; }
+    else { text = "😔 不太幸福"; color = "text-red-500"; }
+    levelEl.className = "mt-3 text-lg font-semibold " + color;
+    levelEl.innerText = text;
+}
+
+function updateWeightTotal() {
+    const sum = (+document.getElementById('weight1').value||0) + (+document.getElementById('weight2').value||0) +
+                (+document.getElementById('weight3').value||0) + (+document.getElementById('weight4').value||0) +
+                (+document.getElementById('weight5').value||0);
+    document.getElementById('weight-total').innerText = '总权重：' + sum + '%';
+}
+</script>
+</body>
+</html>
